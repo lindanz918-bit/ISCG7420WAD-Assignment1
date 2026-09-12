@@ -127,3 +127,6 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+LOGIN_REDIRECT_URL = 'book_appointment'
+LOGOUT_REDIRECT_URL = 'login'
