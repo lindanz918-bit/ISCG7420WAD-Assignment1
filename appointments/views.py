@@ -4,7 +4,7 @@ from django.contrib.auth.views import LoginView
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 
-from .forms import DoctorForm
+from .forms import DoctorForm, SlotForm
 from .models import Doctor, AppointmentSlot, Booking
 
 # Helper check for admin users
@@ -30,23 +30,6 @@ def register(request):
     else:
         form = UserCreationForm()
     return render(request, 'registration/register.html', {'form': form})
-
-
-# Book Appointment View
-@login_required
-def book_appointment(request):
-    if request.method == 'POST':
-        slot_id = request.POST.get('slot_id')
-        slot = get_object_or_404(AppointmentSlot, id=slot_id, is_booked=False)
-
-        Booking.objects.create(patient=request.user, slot=slot)
-        slot.is_booked = True
-        slot.save()
-
-        return redirect('my_bookings')
-    ## Show available unbooked slots (GET request)
-    slots = AppointmentSlot.objects.filter(is_booked=False).select_related('doctor')
-    return render(request, 'appointments/book.html', {'slots': slots})
 
 # Custom Admin Dashboard View
 @user_passes_test(is_admin)
@@ -90,5 +73,38 @@ def edit_doctor(request, doctor_id):
     else:
         form = DoctorForm(instance=doctor)
     return render(request, 'appointments/doctor_form.html', {'form': form, 'title': 'Edit Doctor'})
+
+@user_passes_test(is_admin)
+def add_slot(request):
+    if request.method == 'POST':
+        form = SlotForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('admin_dashboard')
+    else:
+        form = SlotForm()
+    return render(request, 'appointments/slot_form.html', {'form': form, 'title': 'Add Appointment Slot'})
+
+# Book Appointment View
+@login_required
+def book_appointment(request):
+    if request.method == 'POST':
+        slot_id = request.POST.get('slot_id')
+        slot = get_object_or_404(AppointmentSlot, id=slot_id, is_booked=False)
+
+        Booking.objects.create(patient=request.user, slot=slot)
+        slot.is_booked = True
+        slot.save()
+
+        return redirect('my_bookings')
+    ## Show available unbooked slots (GET request)
+    slots = AppointmentSlot.objects.filter(is_booked=False).select_related('doctor')
+    return render(request, 'appointments/book.html', {'slots': slots})
+
+@login_required
+def my_bookings(request):
+    bookings = Booking.objects.filter(patient=request.user).select_related('slot__doctor')
+    return render(request, 'appointments/my_bookings.html', {'bookings': bookings})
+
 
 

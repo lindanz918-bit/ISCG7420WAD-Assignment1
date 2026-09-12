@@ -9,7 +9,7 @@
                 <form method="post">
                     {% csrf_token %}
                     {{ form.as_p }}
-                    <button type="submit" class="btn btn-primary">Save Doctor</button>
+                    <button type="submit" class="btn btn-primary">Save Slot</button>
                     <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">Cancel</a>
                 </form>
             </div>
@@ -17,5 +17,3 @@
         </div>
     </div>
 {% endblock %}
-
-

@@ -13,6 +13,7 @@ urlpatterns = [
     path('custom-admin/doctor/add/', views.add_doctor, name='add_doctor'),
     path('custom-admin/doctor/delete/<int:doctor_id>/', views.delete_doctor, name='delete_doctor'),
     path('custom-admin/doctor/edit/<int:doctor_id>/', views.edit_doctor, name='edit_doctor'),
-
+    path('custom-admin/slot/add/', views.add_slot, name='add_slot'),
+    path('my-bookings/', views.my_bookings, name='my_bookings'),
 ]
 
