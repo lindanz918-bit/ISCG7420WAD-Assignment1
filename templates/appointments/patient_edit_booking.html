@@ -1,0 +1,43 @@
+{% extends '../base.html' %}
+{% block title %}{{ title }} - Piki Ora Medical{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-body">
+                <h3 class="card-title mb-4">{{ title }}</h3>
+
+                <!-- 单一 Form 容器 -->
+                <form method="post">
+                    {% csrf_token %}
+
+                    <!-- step1 select doctor -->
+                    <div class="mb-3">
+                        <label for="doctor_select" class="form-label fw-bold">1. Select Doctor:</label>
+                        <select id="doctor_select" class="form-select" onchange="window.location.href='?doctor_id=' + this.value;">
+                            {% for doc in doctors %}
+                                <option value="{{ doc.id }}" {% if selected_doctor_id == doc.id|stringformat:"s" %}selected{% endif %}>
+                                    Dr. {{ doc.name }} ({{ doc.specialization }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- step2 select slot -->
+                    <div class="mb-3">
+                        <label for="{{ form.slot.id_for_label }}" class="form-label fw-bold">2. Select Time Slot:</label>
+                        {{ form.slot }}
+                        {% if form.slot.errors %}
+                            <div class="text-danger small mt-1">{{ form.slot.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <a href="{% url 'patient_book_list' %}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

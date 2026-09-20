@@ -1,0 +1,70 @@
+{% extends '../base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>All Slots</h2>
+        <a href="{% url 'admin_add_slot' %}" class="btn btn-primary">+ Add New slot</a>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Doctor</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for slot in slots %}
+            <tr>
+                <td class="fw-bold">Dr. {{ slot.doctor.name }}</td>
+                <td>{{ slot.date }}</td>
+                <td>{{ slot.time }}</td>
+                <td>
+                    <!-- Expire check -->
+                    {% if slot.date < today_date or slot.date == today_date and slot.time < current_time %}
+                        <span class="badge bg-secondary">Expired</span>
+                    {% else %}
+                        {% if slot.is_booked %}
+                            <span class="badge bg-secondary">Booked</span>
+                        {% else %}
+                            <span class="badge bg-success">Available</span>
+                        {% endif %}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if slot.date < today_date or slot.date == today_date and slot.time < current_time %}
+                        <!-- Expired slots can only be deleted -->
+                        <form method="post" action="{% url 'admin_delete_slot' slot.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm"
+                                    onclick="return confirm('Are you sure you want to delete this expired slot?')">
+                                Delete
+                            </button>
+                        </form>
+                    {% else %}
+                        {% if slot.is_booked %}
+                            <span class="text-muted">N/A</span>
+                        {% else %}
+                            <form method="post" action="{% url 'admin_delete_slot' slot.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm"
+                                        onclick="return confirm('Are you sure you want to delete this slot?')">
+                                    Delete
+                                </button>
+                            </form>
+                            <a href="{% url 'admin_edit_slot' slot.id %}" class="btn btn-primary btn-sm">Edit</a>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">No slots created yet.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

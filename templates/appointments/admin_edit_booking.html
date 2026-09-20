@@ -1,0 +1,53 @@
+{% extends '../base.html' %}
+
+{% block content %}
+    <h2>Admin Edit Booking</h2>
+
+    <!-- Patient Display -->
+    <input type="hidden" name="user_id" value="{{ booking.patient.id }}">
+    <div class="mb-3">
+        <label class="form-label fw-bold">Patient:</label>
+        <div class="form-control bg-light">
+            {{ booking.patient.username }}
+        </div>
+    </div>
+
+    <!-- Single Combined Form -->
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- Step 1: Select Doctor (Submits GET via JS on change) -->
+        <div class="mb-3">
+            <label for="doctor_id" class="form-label fw-bold">1. Select Doctor:</label>
+            <select name="doctor_id" id="doctor_id" class="form-select" onchange="this.form.method='get'; this.form.submit();">
+                <option value="">-- Choose Doctor --</option>
+                {% for d in doctors %}
+                    <option value="{{ d.id }}" {% if selected_doctor_id == d.id|stringformat:"s" %}selected{% endif %}>
+                        Dr. {{ d.name }} ({{ d.specialization }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Step 2: Select Available Slot -->
+        <div class="mb-3">
+            <label for="slot_id" class="form-label fw-bold">2. Select Available Slot:</label>
+            <select name="slot_id" id="slot_id" class="form-select" required>
+                <option value="">-- Select Time Slot --</option>
+                {% for s in slots %}
+                    <option value="{{ s.id }}" {% if booking.slot.id == s.id %}selected{% endif %}>
+                        {{ s.date|date:"M d, Y" }} at {{ s.time|time:"H:i" }}
+                        {% if booking.slot.id == s.id %}(Currently Booked){% endif %}
+                    </option>
+                {% empty %}
+                    <option value="" disabled>No available slots for this doctor</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Save Changes
+        </button>
+        <a href="{% url 'admin_booking_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+{% endblock %}
