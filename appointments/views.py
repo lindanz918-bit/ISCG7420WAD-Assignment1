@@ -3,12 +3,14 @@
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic.dates import timezone_today
 
@@ -19,20 +21,39 @@ from .models import Doctor, AppointmentSlot, Booking
 def is_admin(user):
     return user.is_staff or user.is_superuser
 
+def is_doctor(user):
+    if not user.is_authenticated:
+        return False
+    return user.groups.filter(name='Doctor').exists() or Doctor.objects.filter(username=user.username).exists()
+
 class CustomLoginView(LoginView):
     template_name = 'registration/login.html'
+    redirect_authenticated_user = True
 
     def get_success_url(self):
+        redirect_to = self.request.POST.get('next') or self.request.GET.get('next')
+        if redirect_to:
+            return redirect_to
+
         user = self.request.user
+
         if user.is_staff or user.is_superuser:
-            return '/custom-admin/'
-        return '/patient/booking-list/'
+            return reverse_lazy('admin_booking_list')
+
+        if is_doctor(user):
+            return reverse_lazy('doctor_dashboard')
+
+        return reverse_lazy('patient_book_list')
 
 def register(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
+
+            patient_group, _ = Group.objects.get_or_create(name='Patient')
+            user.groups.add(patient_group)
+
             login(request, user)  # Auto log-in after registration
             return redirect('book_appointment')
     else:
@@ -77,7 +98,7 @@ def admin_add_booking_view(request):
         return redirect('admin_booking_list')
 
     # GET Request
-    users = User.objects.all()
+    users = User.objects.exclude(groups__name='Doctor').filter(is_staff=False)
     doctors = Doctor.objects.all()
 
     selected_doctor_id = request.GET.get('doctor_id')
@@ -178,14 +199,49 @@ def admin_doctor_list_view(request):
     doctors = Doctor.objects.all()
     return render(request, 'appointments/admin_doctor_list.html', {'doctors': doctors})
 
-# Add Doctor
+#Add Doctor
 @user_passes_test(is_admin)
 def admin_add_doctor_view(request):
     if request.method == 'POST':
         form = DoctorForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('admin_doctor_list')
+            with transaction.atomic():
+                email = form.cleaned_data['email']
+                username = form.cleaned_data['username']
+                first_name = form.cleaned_data['first_name']
+                last_name = form.cleaned_data['last_name']
+
+                if User.objects.filter(username=username).exists():
+                    messages.error(request, f"Username '{username}' already exists.")
+                    return render(request, 'appointments/admin_add_doctor_form.html', {'form': form})
+
+                if User.objects.filter(email=email).exists():
+                    messages.error(request, f"Email '{email}' already exists.")
+                    return render(request, 'appointments/admin_add_doctor_form.html', {'form': form})
+
+                default_password = '123456'
+
+                user = User.objects.create_user(
+                    username=username,
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    password=default_password,
+                )
+
+                doctor_group, _ = Group.objects.get_or_create(name='Doctor')
+                user.groups.add(doctor_group)
+
+                doctor = form.save(commit=False)
+                doctor.user = user
+                doctor.save()
+
+                messages.success(
+                    request,
+                    f"Doctor account for 'Dr. {first_name} {last_name}' created successfully! "
+                    f"Default login password is: {default_password}"
+                )
+                return redirect('admin_doctor_list')
     else:
         form = DoctorForm()
     return render(request, 'appointments/admin_add_doctor_form.html', {'form': form})
@@ -257,10 +313,10 @@ def admin_delete_slot_view(request, slot_id):
 def admin_user_list_view(request):
     search_query = request.GET.get('q', '')
     if search_query:
-        users_list = User.objects.filter(username__icontains=search_query) | User.objects.filter(
-            email__icontains=search_query)
+        users_list = User.objects.filter(Q(username__icontains=search_query) | Q(email__icontains=search_query)
+                                         ).prefetch_related('groups').order_by('-date_joined')
     else:
-        users_list = User.objects.all().order_by('-date_joined')
+        users_list = User.objects.all().prefetch_related('groups').order_by('-date_joined')
 
     paginator = Paginator(users_list, 10)
     page_number = request.GET.get('page')
@@ -270,20 +326,22 @@ def admin_user_list_view(request):
         'page_obj': page_obj,
         'search_query': search_query
     })
-
 @user_passes_test(is_admin)
 def admin_create_user_view(request):
     if request.method == 'POST':
         form = CustomUserCreateForm(request.POST)
         if form.is_valid():
             user = form.save()
-            messages.success(request, f"User {user.username} create successfully！")
+            messages.success(
+                request,
+                f"User '{user.username}' created successfully! "
+                f"Default login password is: 123456"
+            )
             return redirect('admin_user_list')
     else:
         form = CustomUserCreateForm()
 
     return render(request, 'appointments/admin_add_user_form.html', {'form': form})
-
 @user_passes_test(is_admin)
 def admin_edit_user_view(request, user_id):
     user = get_object_or_404(User, id=user_id)
@@ -329,39 +387,6 @@ def patient_book_list_view(request):
     })
 
 @login_required
-def patient_add_booking_view(request):
-    doctors = Doctor.objects.all()
-    selected_doctor_id = request.GET.get('doctor_id')
-
-    if not selected_doctor_id and doctors.exists():
-        selected_doctor_id = str(doctors.first().id)
-
-    if request.method == 'POST':
-        # Pass doctor_id when binding POST request
-        form = PatientEditBookingForm(request.POST, doctor_id=selected_doctor_id)
-        if form.is_valid():
-            booking = form.save(commit=False)
-            booking.patient = request.user
-            booking.save()
-
-            slot = booking.slot
-            slot.is_booked = True
-            slot.save()
-
-            messages.success(request, "Booking added successfully!")
-            return redirect('patient_book_list')
-    else:
-        # Pass doctor_id on GET request
-        form = PatientEditBookingForm(doctor_id=selected_doctor_id)
-
-    return render(request, 'appointments/patient_add_booking.html', {
-        'form': form,
-        'doctors': doctors,
-        'selected_doctor_id': selected_doctor_id,
-        'title': 'Add New Booking'
-    })
-
-@login_required
 def patent_edit_booking_view(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id, patient=request.user)
     selected_doctor_id = request.GET.get('doctor_id', str(booking.slot.doctor.id))
@@ -403,6 +428,118 @@ def patient_cancel_booking_view(request,booking_id):
         messages.success(request, "Booking cancelled successfully!")
         return redirect('patient_book_list')
     return redirect('patient_book_list')
+
+
+@login_required
+def patient_available_slots_view(request):
+    now_local = timezone.localtime()
+    today_date = now_local.date()
+    current_time = now_local.time()
+
+    future_slots = Q(date__gt=today_date) | Q(date=today_date, time__gte=current_time)
+
+    search_query = request.GET.get('q', '')
+    doctor_id = request.GET.get('doctor_id', '')
+    selected_date = request.GET.get('date', '')
+    selected_specialization = request.GET.get('specialization', '')
+
+    slots = AppointmentSlot.objects.filter(is_booked=False).filter(future_slots).select_related('doctor')
+
+    if doctor_id:
+        slots = slots.filter(doctor_id=doctor_id)
+
+    if selected_date:
+        slots = slots.filter(date=selected_date)
+
+    if selected_specialization:
+        slots = slots.filter(doctor__specialization__iexact=selected_specialization)
+
+    if search_query:
+        slots = slots.filter(
+            Q(doctor__username__icontains=search_query) |
+            Q(doctor__first_name__icontains=search_query) |
+            Q(doctor__last_name__icontains=search_query) |
+            Q(doctor__specialization__icontains=search_query)
+        )
+
+    slots = slots.order_by('date', 'time')
+    doctors = Doctor.objects.all()
+
+    specializations = Doctor.objects.values_list('specialization', flat=True).distinct()
+
+    context = {
+        'slots': slots,
+        'doctors': doctors,
+        'specializations': specializations,
+        'search_query': search_query,
+        'selected_doctor_id': doctor_id,
+        'selected_date': selected_date,
+        'selected_specialization': selected_specialization,
+    }
+    return render(request, 'appointments/patient_available_slots.html', context)
+
+@login_required
+def patient_book_slot_direct_view(request, slot_id):
+    if request.method == 'POST':
+        now_local = timezone.localtime()
+        today_date = now_local.date()
+        current_time = now_local.time()
+
+        future_slots = Q(date__gt=today_date) | Q(date=today_date, time__gte=current_time)
+
+        slot = get_object_or_404(
+            AppointmentSlot,
+            future_slots,
+            id=slot_id,
+            is_booked=False
+        )
+
+        with transaction.atomic():
+            Booking.objects.create(patient=request.user, slot=slot)
+            slot.is_booked = True
+            slot.save()
+
+        messages.success(request,
+                         f"Successfully booked with Dr. {slot.doctor.first_name} {slot.doctor.last_name} for {slot.date} at {slot.time.strftime('%H:%M')}!")
+        return redirect('patient_book_list')
+
+    return redirect('patient_available_slots')
+
+
+@user_passes_test(is_doctor)
+def doctor_dashboard_view(request):
+    doctor = Doctor.objects.filter(username=request.user.username).first()
+
+    if doctor:
+        bookings = list(Booking.objects.filter(slot__doctor=doctor).select_related('patient', 'slot__doctor'))
+    else:
+        bookings = []
+
+    now_local = timezone.localtime()
+
+    return render(request, 'appointments/doctor_dashboard.html', {
+        'doctor': doctor,
+        'bookings': bookings,
+        'today_date': now_local.date(),
+        'current_time': now_local.time(),
+        'search_query': request.GET.get('q', '')
+    })
+
+@login_required
+def doctor_add_comment_view(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    if request.method == 'POST':
+        comment = request.POST.get('doctor_comments', '').strip()
+
+        booking.doctor_comments = comment
+        booking.save()
+
+        messages.success(request, "Comment updated successfully!")
+        return redirect('doctor_dashboard')
+
+    return redirect('doctor_dashboard')
+
 
 
 

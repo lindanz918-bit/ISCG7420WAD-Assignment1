@@ -6,7 +6,7 @@
         <a href="{% url 'admin_add_booking' %}" class="btn btn-primary">+ Add New Booking</a>
     </div>
 
-    <table class="table table-striped">
+    <table class="table table-hover align-middle mb-0">
         <thead>
         <tr>
             <th>Patient Name</th>
@@ -19,19 +19,28 @@
         <tbody>
         {% for booking in bookings %}
             <tr>
-                <td>{{ booking.patient.get_full_name|default:booking.patient.username }}</td>
-                <td>Dr. {{ booking.slot.doctor.name }}</td>
+                <td class="ps-4">
+                    <div class="fw-bold">
+                     {{ booking.patient.first_name }} {{ booking.patient.last_name }}</div>
+                    <small class="text-muted">@{{ booking.patient.username }}</small>
+                </td>
+
+                <td class="ps-4">
+                    <div class="fw-bold">
+                        Dr. {{ booking.slot.doctor.first_name }} {{ booking.slot.doctor.last_name }}</div>
+                    <small class="text-muted">@{{ booking.slot.doctor.username }}</small>
+                </td>
                 <td>{{ booking.slot.date }}</td>
                 <td>{{ booking.slot.time }}</td>
                 <td>
                     <!-- Expire check -->
                     {% if booking.slot.date < today_date or booking.slot.date == today_date and booking.slot.time < current_time %}
-                        <span class="badge bg-secondary">Expired</span>
+                        <span class="badge bg-secondary">Completed / Expired</span>
                         <form method="post" action="{% url 'admin_cancel_booking' booking.id %}"
                               class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger btn-sm"
-                                   onclick="return confirm('Are you sure you want to delete this expired slot?')">
+                                    onclick="return confirm('Are you sure you want to delete this expired slot?')">
                                 Delete
                             </button>
                         </form>

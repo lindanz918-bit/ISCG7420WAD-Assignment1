@@ -11,7 +11,7 @@
                 <option value="">-- Choose Doctor First --</option>
                 {% for d in doctors %}
                     <option value="{{ d.id }}" {% if selected_doctor_id == d.id|stringformat:"s" %}selected{% endif %}>
-                        Dr. {{ d.name }} ({{ d.specialization }})
+                        Dr. {{ d.first_name }} {{ d.last_name }} @{{ d.username }} ({{ d.specialization }})
                     </option>
                 {% endfor %}
             </select>
@@ -28,7 +28,7 @@
             <select name="user_id" id="user_id" class="form-select" required>
                 <option value="">-- Select Patient --</option>
                 {% for u in users %}
-                    <option value="{{ u.id }}">{{ u.username }} ({% if u.email %}{{ u.email }}{% else %}No
+                    <option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }} @{{ u.username }} ({% if u.email %}{{ u.email }}{% else %}No
                         email{% endif %})
                     </option>
                 {% endfor %}

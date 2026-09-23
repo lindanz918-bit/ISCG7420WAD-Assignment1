@@ -9,6 +9,10 @@
                     <form method="post">
                         {% csrf_token %}
                         {{ form.as_p }}
+                        <div class="alert alert-info py-2" role="alert">
+                            <i class="bi bi-info-circle"></i> <strong>Note:</strong> The initial password for this
+                            account will be automatically set to <code>123456</code>.
+                        </div>
                         <button type="submit" class="btn btn-primary">Save User</button>
                         <a href="{% url 'admin_user_list' %}" class="btn btn-secondary">Cancel</a>
                     </form>

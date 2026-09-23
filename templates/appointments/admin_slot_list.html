@@ -6,7 +6,7 @@
         <a href="{% url 'admin_add_slot' %}" class="btn btn-primary">+ Add New slot</a>
     </div>
 
-    <table class="table table-striped">
+    <table class="table table-hover align-middle mb-0">
         <thead>
         <tr>
             <th>Doctor</th>
@@ -19,11 +19,13 @@
         <tbody>
         {% for slot in slots %}
             <tr>
-                <td class="fw-bold">Dr. {{ slot.doctor.name }}</td>
+                <td class="ps-4">
+                    <div class="fw-bold">Dr. {{ slot.doctor.first_name }} {{ slot.doctor.last_name }}</div>
+                    <small class="text-muted">@{{ slot.doctor.username }}</small>
+                </td>
                 <td>{{ slot.date }}</td>
                 <td>{{ slot.time }}</td>
                 <td>
-                    <!-- Expire check -->
                     {% if slot.date < today_date or slot.date == today_date and slot.time < current_time %}
                         <span class="badge bg-secondary">Expired</span>
                     {% else %}
@@ -36,7 +38,6 @@
                 </td>
                 <td>
                     {% if slot.date < today_date or slot.date == today_date and slot.time < current_time %}
-                        <!-- Expired slots can only be deleted -->
                         <form method="post" action="{% url 'admin_delete_slot' slot.id %}" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger btn-sm"
@@ -46,7 +47,14 @@
                         </form>
                     {% else %}
                         {% if slot.is_booked %}
-                            <span class="text-muted">N/A</span>
+                            <form method="post" action="{% url 'admin_delete_slot' slot.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm"
+                                        onclick="return confirm('Are you sure you want to delete this slot?')">
+                                    Delete
+                                </button>
+                            </form>
+                            <a href="{% url 'admin_edit_slot' slot.id %}" class="btn btn-primary btn-sm">Edit</a>
                         {% else %}
                             <form method="post" action="{% url 'admin_delete_slot' slot.id %}" class="d-inline">
                                 {% csrf_token %}

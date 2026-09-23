@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" action="" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary small">Search Doctor</label>
+                    <input type="text" name="q" class="form-control"
+                           placeholder="Search name, username..."
+                           value="{{ search_query }}">
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary small">Specialization</label>
+                    <select name="specialization" class="form-select">
+                        <option value="">All Specializations</option>
+                        {% for spec in specializations %}
+                            {% if spec %}
+                                <option value="{{ spec }}" {% if selected_specialization == spec %}selected{% endif %}>
+                                    {{ spec }}
+                                </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label fw-bold text-secondary small">Doctor</label>
+                    <select name="doctor_id" class="form-select">
+                        <option value="">All Doctors</option>
+                        {% for doc in doctors %}
+                            <option value="{{ doc.id }}" {% if selected_doctor_id == doc.id|stringformat:"s" %}selected{% endif %}>
+                                Dr. {{ doc.first_name }} {{ doc.last_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label fw-bold text-secondary small">Date</label>
+                    <input type="date" name="date" class="form-control" value="{{ selected_date }}">
+                </div>
+
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">
+                        Filter
+                    </button>
+                    <a href="{% url 'patient_available_slots' %}" class="btn btn-outline-secondary">
+                        Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Doctor</th>
+                    <th>Specialization</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th class="text-end pe-4">Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% if slots %}
+                    {% for slot in slots %}
+                        <tr>
+                            <td>
+                                <a href="#"
+                                   class="text-primary text-decoration-underline fw-bold"
+                                   data-bs-toggle="modal"
+                                   data-bs-target="#doctorModal{{ slot.doctor.id }}">
+                                    Dr. {{ slot.doctor.first_name }} {{ slot.doctor.last_name }}
+                                </a>
+                                <br><small class="text-muted">@{{ slot.doctor.username }}</small>
+
+                                <div class="modal fade" id="doctorModal{{ slot.doctor.id }}" tabindex="-1"
+                                     aria-labelledby="doctorModalLabel{{ slot.doctor.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-primary text-white">
+                                                <h5 class="modal-title" id="doctorModalLabel{{ slot.doctor.id }}">
+                                                    Dr. {{ slot.doctor.first_name }} {{ slot.doctor.last_name }}
+                                                </h5>
+                                                <button type="button" class="btn-close btn-close-white"
+                                                        data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body text-start">
+                                                <p class="mb-2"><strong>Specialization:</strong> <span
+                                                        class="badge bg-info text-dark">{{ slot.doctor.specialization }}</span>
+                                                </p>
+                                                {% if slot.doctor.email %}
+                                                    <p class="mb-2"><strong>Email:</strong> {{ slot.doctor.email }}</p>
+                                                {% endif %}
+                                                {% if slot.doctor.phone %}
+                                                    <p class="mb-2"><strong>Phone:</strong> {{ slot.doctor.phone }}</p>
+                                                {% endif %}
+                                                <hr>
+                                                <h6 class="fw-bold">Professional Experience & Background:</h6>
+                                                <p class="text-muted" style="white-space: pre-line;">
+                                                    {% if slot.doctor.experience %}
+                                                        {{ slot.doctor.experience }}
+                                                    {% else %}
+                                                        No experience details provided yet.
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                    Close
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </td>
+                            <td><span class="badge bg-info text-dark">{{ slot.doctor.specialization }}</span></td>
+                            <td>{{ slot.date }}</td>
+                            <td>{{ slot.time|time:"g:i A" }}</td>
+                            <td class="text-end pe-4">
+                                <form method="post" action="{% url 'patient_book_slot_direct' slot.id %}"
+                                      class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-success btn-sm px-3"
+                                            onclick="return confirm('Are you sure you want to book this slot?');">
+                                        Book Now
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">
+                            No available appointment slots found.
+                        </td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

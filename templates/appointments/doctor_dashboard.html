@@ -1,0 +1,118 @@
+{% extends '../base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Doctor Dashboard - Dr. {{ doctor.first_name }} {{ doctor.last_name }}</h2>
+        <span class="badge bg-info text-dark fs-6">Specialization: {{ doctor.specialization|default:"General" }}</span>
+    </div>
+
+    <table class="table table-hover align-middle mb-0">
+        <thead>
+        <tr>
+            <th>Patient Name</th>
+            <th>Patient Email</th>
+            <th>Appointment Date</th>
+            <th>Time Slot</th>
+            <th>Status</th>
+            <th>Doctor Comments</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for booking in bookings %}
+            <tr>
+                <td>
+                    <strong>{{ booking.patient.get_full_name|default:booking.patient.username }}</strong>
+                </td>
+                <td>{{ booking.patient.email|default:"--" }}</td>
+                <td>{{ booking.slot.date }}</td>
+                <td>{{ booking.slot.time|time:"H:i" }}</td>
+                <td>
+                    {% if booking.slot.date < today_date or booking.slot.date == today_date and booking.slot.time < current_time %}
+                        <span class="badge bg-secondary">Completed / Expired</span>
+                    {% else %}
+                        <span class="badge bg-success">Upcoming</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if booking.doctor_comments %}
+                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                data-bs-toggle="modal" data-bs-target="#viewModal{{ booking.id }}">
+                            View Comments
+                        </button>
+                    {% else %}
+                        <span class="text-muted small">No comments yet</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                            data-bs-target="#editModal{{ booking.id }}">
+                        {% if booking.doctor_comments %}Edit Comment{% else %}Add Comment{% endif %}
+                    </button>
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="7" class="text-center py-4 text-muted">No appointments found for you.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    {% for booking in bookings %}
+        {% if booking.doctor_comments %}
+            <div class="modal fade" id="viewModal{{ booking.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content text-start">
+                        <div class="modal-header bg-light">
+                            <h5 class="modal-title fw-bold text-primary">Doctor Notes
+                                - {{ booking.patient.username }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted small mb-2">
+                                Appointment: <strong>{{ booking.slot.date }} {{ booking.slot.time|time:"H:i" }}</strong>
+                            </p>
+                            <div class="p-3 bg-light rounded border text-dark"
+                                 style="white-space: pre-line; word-break: break-word;">
+                                {{ booking.doctor_comments }}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary fw-bold" data-bs-dismiss="modal"
+                                    data-bs-toggle="modal" data-bs-target="#editModal{{ booking.id }}">
+                                Edit Comment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="modal fade" id="editModal{{ booking.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content text-start">
+                    <form method="post" action="{% url 'doctor_add_comment' booking.id %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold">Doctor Comment for {{ booking.patient.username }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Comments / Notes:</label>
+                                <textarea name="doctor_comments" class="form-control" rows="4"
+                                          placeholder="Enter advice or notes for the patient...">{{ booking.doctor_comments|default:'' }}</textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary fw-bold">Save Comment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

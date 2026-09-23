@@ -5,23 +5,50 @@
 {% block content %}
 <div class="row justify-content-center mt-5">
     <div class="col-md-5">
-        <div class="card shadow">
+        <div class="card shadow border-0 rounded-3">
             <div class="card-body p-4">
-                <h3 class="card-title text-center mb-4 text-primary fw-bold">Patient Login</h3>
+                <h3 class="card-title text-center mb-4 text-primary fw-bold">Sign In</h3>
+
+                {% if form.errors %}
+                    <div class="alert alert-danger alert-dismissible fade show py-2" role="alert">
+                        <small class="fw-bold">Invalid username or password. Please try again.</small>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endif %}
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show py-2" role="alert">
+                            <small>{{ message }}</small>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
                 <form method="post">
                     {% csrf_token %}
                     <div class="mb-3">
-                        <label for="id_username" class="form-label">Username</label>
-                        <input type="text" name="username" class="form-control" id="id_username" required>
+                        <label for="id_username" class="form-label fw-bold">Username</label>
+                        <input type="text"
+                               name="username"
+                               class="form-control {% if form.errors %}is-invalid{% endif %}"
+                               id="id_username"
+                               value="{{ request.POST.username|default:'' }}"
+                               required>
                     </div>
                     <div class="mb-3">
-                        <label for="id_password" class="form-label">Password</label>
-                        <input type="password" name="password" class="form-control" id="id_password" required>
+                        <label for="id_password" class="form-label fw-bold">Password</label>
+                        <input type="password"
+                               name="password"
+                               class="form-control {% if form.errors %}is-invalid{% endif %}"
+                               id="id_password"
+                               required>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 py-2">Sign In</button>
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Sign In</button>
                 </form>
+
                 <div class="text-center mt-3">
-                    <small>Don't have an account? <a href="{% url 'register' %}">Register here</a></small>
+                    <small class="text-muted">Don't have an account? <a href="{% url 'register' %}" class="fw-bold">Register here</a></small>
                 </div>
             </div>
         </div>

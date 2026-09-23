@@ -46,14 +46,38 @@
                                 Manage Users
                             </a>
                         </li>
+                    {% elif user.doctor %}
+                        <li class="nav-item">
+                            <a class="nav-link fw-bold me-3 {% if request.resolver_match.url_name == 'doctor_dashboard' %}active text-white{% else %}text-white-50{% endif %}"
+                               href="{% url 'doctor_dashboard' %}">Doctor Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link fw-bold me-3 {% if request.resolver_match.url_name == 'change_password' %}active text-white{% else %}text-white-50{% endif %}"
+                               href="{% url 'change_password' %}">
+                                Change Password
+                            </a>
+                        </li>
                     {% else %}
                         <!-- Regular Patient Navigation Only -->
                         <li class="nav-item">
                             <a class="nav-link fw-bold me-3 {% if request.resolver_match.url_name == 'patient_book_list' %}active text-white{% else %}text-white-50{% endif %}"
-                               href="{% url 'patient_book_list'  %}">My Bookings</a>
+                               href="{% url 'patient_book_list' %}">
+                                My Bookings
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link fw-bold me-3 {% if request.resolver_match.url_name == 'patient_available_slots' %}active text-white{% else %}text-white-50{% endif %}"
+                               href="{% url 'patient_available_slots' %}">
+                                Available Slots
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link fw-bold me-3 {% if request.resolver_match.url_name == 'change_password' %}active text-white{% else %}text-white-50{% endif %}"
+                               href="{% url 'change_password' %}">
+                                Change Password
+                            </a>
                         </li>
                     {% endif %}
-
                     <!-- Logout (For All Authenticated Users) -->
                     <li class="nav-item">
                         <form method="post" action="{% url 'logout' %}" class="d-inline">
