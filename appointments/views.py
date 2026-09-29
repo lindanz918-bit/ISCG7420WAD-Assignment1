@@ -16,7 +16,8 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.views.generic.dates import timezone_today
 
-from .forms import DoctorForm, SlotForm, CustomUserCreateForm, EditUserForm, PatientEditBookingForm
+from .forms import DoctorForm, SlotForm, CustomUserCreateForm, EditUserForm, PatientEditBookingForm, \
+    PatientRegistrationForm
 from .models import Doctor, AppointmentSlot, Booking
 
 # Helper check for admin users
@@ -56,20 +57,19 @@ def custom_logout_view(request):
     response.delete_cookie('csrftoken')
     return response
 
+@never_cache
 def register(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = PatientRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
-
-            patient_group, _ = Group.objects.get_or_create(name='Patient')
-            user.groups.add(patient_group)
-
-            login(request, user)  # Auto log-in after registration
+            login(request, user)
             return redirect('patient_book_list')
     else:
-        form = UserCreationForm()
+        form = PatientRegistrationForm()
     return render(request, 'registration/register.html', {'form': form})
+
+
 @user_passes_test(is_admin)
 def admin_booking_list_view(request):
     bookings = Booking.objects.all().select_related('patient', 'slot__doctor')

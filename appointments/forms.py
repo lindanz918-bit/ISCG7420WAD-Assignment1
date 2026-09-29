@@ -237,3 +237,31 @@ class PatientEditBookingForm(forms.ModelForm):
             queryset = queryset.filter(doctor_id=doctor_id)
 
         self.fields['slot'].queryset = queryset.order_by('date', 'time')
+
+
+class PatientRegistrationForm(UserCreationForm):
+    first_name = forms.CharField(max_length=30, required=True, label="First Name")
+    last_name = forms.CharField(max_length=30, required=True, label="Last Name")
+    email = forms.EmailField(required=True, label="Email Address")
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = UserCreationForm.Meta.fields + ('first_name', 'last_name', 'email')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.update({'class': 'form-control'})
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
+        user.email = self.cleaned_data['email']
+
+        if commit:
+            user.save()
+            patient_group, _ = Group.objects.get_or_create(name='Patient')
+            user.groups.add(patient_group)
+
+        return user
