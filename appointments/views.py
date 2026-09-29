@@ -1,7 +1,7 @@
 
 
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.views import LoginView
@@ -12,6 +12,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 from django.views.generic.dates import timezone_today
 
 from .forms import DoctorForm, SlotForm, CustomUserCreateForm, EditUserForm, PatientEditBookingForm
@@ -28,6 +30,7 @@ def is_doctor(user):
 
 def home_view(request):
     return render(request, 'appointments/home.html')
+@method_decorator(never_cache, name='dispatch')
 class CustomLoginView(LoginView):
     template_name = 'registration/login.html'
     redirect_authenticated_user = True
@@ -46,6 +49,12 @@ class CustomLoginView(LoginView):
             return reverse_lazy('doctor_dashboard')
 
         return reverse_lazy('patient_book_list')
+
+def custom_logout_view(request):
+    logout(request)
+    response = redirect('home')
+    response.delete_cookie('csrftoken')
+    return response
 
 def register(request):
     if request.method == 'POST':
