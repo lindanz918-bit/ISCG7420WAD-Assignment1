@@ -144,6 +144,7 @@ LOGIN_REDIRECT_URL = 'patient_book_list'
 LOGOUT_REDIRECT_URL = 'login'
 
 CSRF_TRUSTED_ORIGINS = [
+    'https://iscg7420wad-assignment1.onrender.com',
     'https://*.onrender.com',
     'http://127.0.0.1',
     'http://localhost',
