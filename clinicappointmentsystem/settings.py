@@ -23,8 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-lt$u41ks=_+i*@8yc-zaf%uc5-417$129hz6xqlkk_d)%2jg!v'
-
+#SECRET_KEY = 'django-insecure-lt$u41ks=_+i*@8yc-zaf%uc5-417$129hz6xqlkk_d)%2jg!v'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-lt$u41ks=_+i*@8yc-zaf%uc5-417$129hz6xqlkk_d)%2jg!v')
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -141,3 +142,9 @@ MAILERS = {
 
 LOGIN_REDIRECT_URL = 'patient_book_list'
 LOGOUT_REDIRECT_URL = 'login'
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.onrender.com',
+    'http://127.0.0.1',
+    'http://localhost',
+]
