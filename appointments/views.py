@@ -30,6 +30,15 @@ def is_doctor(user):
     return user.groups.filter(name='Doctor').exists() or Doctor.objects.filter(username=user.username).exists()
 
 def home_view(request):
+    # 如果用户已经登录，根据其身份/分组跳转到对应页面
+    if request.user.is_authenticated:
+        if request.user.is_superuser or request.user.groups.filter(name='Admin').exists():
+            return redirect('admin_booking_list')
+        elif hasattr(request.user, 'doctor'):
+            return redirect('doctor_dashboard')
+        else:
+            return redirect('patient_book_list')
+
     return render(request, 'appointments/home.html')
 @method_decorator(never_cache, name='dispatch')
 class CustomLoginView(LoginView):
