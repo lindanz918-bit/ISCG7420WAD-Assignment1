@@ -55,7 +55,7 @@ def register(request):
             user.groups.add(patient_group)
 
             login(request, user)  # Auto log-in after registration
-            return redirect('book_appointment')
+            return redirect('patient_book_list')
     else:
         form = UserCreationForm()
     return render(request, 'registration/register.html', {'form': form})
