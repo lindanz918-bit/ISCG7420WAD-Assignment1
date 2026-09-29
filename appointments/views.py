@@ -273,12 +273,31 @@ def admin_edit_doctor_view(request, doctor_id):
         form = DoctorForm(instance=doctor)
     return render(request, 'appointments/admin_add_doctor_form.html', {'form': form, 'title': 'Edit Doctor'})
 
+
 @user_passes_test(is_admin)
 def admin_delete_doctor_view(request, doctor_id):
     doctor = get_object_or_404(Doctor, id=doctor_id)
+
     if request.method == 'POST':
-        doctor.delete()
+        # 1. 检查该医生下是否有任何已被预约的 Slot 关联记录
+        has_doctor_bookings = Booking.objects.filter(slot__doctor=doctor).exists()
+
+        if has_doctor_bookings:
+            messages.error(
+                request,
+                f"Cannot delete Dr. {doctor.first_name} {doctor.last_name}. This doctor still has existing appointments. "
+                f"Please cancel all associated bookings before deleting."
+            )
+            return redirect('admin_doctor_list')
+
+        if doctor.user:
+            doctor.user.delete()
+        else:
+            doctor.delete()
+        messages.success(request, f"Doctor 'Dr. {doctor.first_name} {doctor.last_name}' was deleted successfully.")
+
     return redirect('admin_doctor_list')
+
 
 
 @user_passes_test(is_admin)
@@ -384,11 +403,30 @@ def admin_active_user_view(request, user_id):
     user.save()
     return redirect('admin_user_list')
 
+
 @user_passes_test(is_admin)
 def admin_delete_user_view(request, user_id):
     user = get_object_or_404(User, id=user_id)
+
     if request.method == 'POST':
+        has_patient_bookings = Booking.objects.filter(patient=user).exists()
+        has_doctor_bookings = False
+        if hasattr(user, 'doctor'):
+            has_doctor_bookings = Booking.objects.filter(slot__doctor=user.doctor).exists()
+
+        if has_patient_bookings or has_doctor_bookings:
+            role = "Doctor" if has_doctor_bookings else "Patient"
+            messages.error(
+                request,
+                f"Cannot delete user '{user.username}'. This {role} still has existing appointments. "
+                f"Please cancel all associated bookings before deleting."
+            )
+            return redirect('admin_user_list')
+
+        username = user.username
         user.delete()
+        messages.success(request, f"User '{username}' was deleted successfully.")
+
     return redirect('admin_user_list')
 
 @login_required
