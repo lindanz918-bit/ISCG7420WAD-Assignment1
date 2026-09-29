@@ -143,19 +143,17 @@ class EditUserForm(forms.ModelForm):
         queryset=Group.objects.all(),
         required=False,
         label="User Role / Group",
-        empty_label="- Select Group -",
-        widget=forms.Select(attrs={'class': 'form-select'})
+        empty_label="- Select Group -"
     )
 
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email', 'is_active', 'group']
+        fields = ['username', 'first_name', 'last_name', 'email', 'group']
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control'}),
             'first_name': forms.TextInput(attrs={'class': 'form-control'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'})
         }
 
     def __init__(self, *args, **kwargs):

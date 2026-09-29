@@ -30,7 +30,6 @@ def is_doctor(user):
     return user.groups.filter(name='Doctor').exists() or Doctor.objects.filter(username=user.username).exists()
 
 def home_view(request):
-    # 如果用户已经登录，根据其身份/分组跳转到对应页面
     if request.user.is_authenticated:
         if request.user.is_superuser or request.user.groups.filter(name='Admin').exists():
             return redirect('admin_booking_list')
@@ -161,7 +160,6 @@ def admin_edit_booking_view(request, booking_id):
             old_slot.is_booked = False
             old_slot.save()
 
-            # Ensure the newly chosen slot is unbooked AND not in the past
             new_slot = get_object_or_404(
                 AppointmentSlot,
                 future_slot,
@@ -177,7 +175,6 @@ def admin_edit_booking_view(request, booking_id):
         messages.success(request, "Booking updated successfully!")
         return redirect('admin_booking_list')
 
-    # GET Request Processing
     users = User.objects.all()
     doctors = Doctor.objects.all()
 
@@ -186,10 +183,8 @@ def admin_edit_booking_view(request, booking_id):
         selected_doctor_id = str(booking.slot.doctor.id)
 
     now_local = timezone.localtime()
-    # Use time__gte (greater than or equal to)
     future_slot = Q(date__gt=now_local.date()) | Q(date=now_local.date(), time__gte=now_local.time())
 
-    # Include available future slots OR the slot currently assigned to this booking
     slots = AppointmentSlot.objects.filter(
         doctor_id=selected_doctor_id
     ).filter(
