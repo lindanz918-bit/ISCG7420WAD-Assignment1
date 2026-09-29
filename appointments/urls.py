@@ -4,6 +4,7 @@ from . import views
 from .views import CustomLoginView
 
 urlpatterns = [
+    path('', views.home_view, name='home'),
     path(
         'change-password/',
         auth_views.PasswordChangeView.as_view(

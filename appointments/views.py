@@ -26,6 +26,8 @@ def is_doctor(user):
         return False
     return user.groups.filter(name='Doctor').exists() or Doctor.objects.filter(username=user.username).exists()
 
+def home_view(request):
+    return render(request, 'appointments/home.html')
 class CustomLoginView(LoginView):
     template_name = 'registration/login.html'
     redirect_authenticated_user = True
