@@ -22,7 +22,7 @@ urlpatterns = [
     ),
     path('register/', views.register, name='register'),
     path('login/', CustomLoginView.as_view(), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='home'), name='logout'),
     path('custom-admin/', views.admin_booking_list_view, name='admin_booking_list'),
     path('custom-admin/booking-list/', views.admin_booking_list_view, name='admin_booking_list'),
     path('custom-admin/booking-list/add/', views.admin_add_booking_view, name='admin_add_booking'),
