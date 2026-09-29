@@ -25,8 +25,8 @@
                 <td>{{ booking.slot.time }}</td>
                 <td>
                     {% if booking.doctor_comments %}
-                        <button type="button" class="btn btn-sm btn-link p-0 text-primary fw-bold text-decoration-underline"
-                                data-bs-toggle="modal" data-bs-target="#commentModal{{ booking.id }}">
+                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                data-bs-toggle="modal" data-bs-target="#viewModal{{ booking.id }}">
                             View Comments
                         </button>
                     {% else %}
@@ -58,38 +58,6 @@
                     {% endif %}
                 </td>
             </tr>
-            {% if booking.doctor_comments %}
-                <div class="modal fade" id="commentModal{{ booking.id }}" tabindex="-1"
-                     aria-labelledby="commentModalLabel{{ booking.id }}" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header bg-light">
-                                <h5 class="modal-title fw-bold text-primary" id="commentModalLabel{{ booking.id }}">
-                                    Doctor's Comment
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body text-start">
-                                <div class="mb-2 text-muted small">
-                                    <strong>Doctor:</strong>
-                                    Dr. {{ booking.slot.doctor.first_name }} {{ booking.slot.doctor.last_name }}<br>
-                                    <strong>Date & Time:</strong> {{ booking.slot.date }} {{ booking.slot.time }}
-                                </div>
-                                <hr class="my-2">
-                                <label class="form-label fw-bold text-dark mb-1">Doctor Advice / Notes:</label>
-                                <div class="p-3 bg-light rounded border text-dark"
-                                     style="white-space: pre-line; word-break: break-word;">
-                                    {{ booking.doctor_comments }}
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
         {% empty %}
             <tr>
                 <td colspan="5" class="text-center py-4 text-muted">No bookings found.</td>
@@ -97,4 +65,24 @@
         {% endfor %}
         </tbody>
     </table>
+    {% for booking in bookings %}
+        {% if booking.doctor_comments %}
+            <div class="modal fade" id="viewModal{{ booking.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content text-start">
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold">Doctor Comments for {{ booking.patient.username }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-0" style="white-space: pre-wrap;">{{ booking.doctor_comments }}</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
 {% endblock %}

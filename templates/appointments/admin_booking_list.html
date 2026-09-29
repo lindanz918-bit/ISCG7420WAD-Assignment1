@@ -13,6 +13,7 @@
             <th>Doctor</th>
             <th>Date</th>
             <th>Time</th>
+            <th>Doctor's Comments</th>
             <th>Actions</th>
         </tr>
         </thead>
@@ -21,7 +22,7 @@
             <tr>
                 <td class="ps-4">
                     <div class="fw-bold">
-                     {{ booking.patient.first_name }} {{ booking.patient.last_name }}</div>
+                        {{ booking.patient.first_name }} {{ booking.patient.last_name }}</div>
                     <small class="text-muted">@{{ booking.patient.username }}</small>
                 </td>
 
@@ -32,6 +33,16 @@
                 </td>
                 <td>{{ booking.slot.date }}</td>
                 <td>{{ booking.slot.time }}</td>
+                <td>
+                    {% if booking.doctor_comments %}
+                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                data-bs-toggle="modal" data-bs-target="#viewModal{{ booking.id }}">
+                            View Comments
+                        </button>
+                    {% else %}
+                        <span class="text-muted small">No comments yet</span>
+                    {% endif %}
+                </td>
                 <td>
                     <!-- Expire check -->
                     {% if booking.slot.date < today_date or booking.slot.date == today_date and booking.slot.time < current_time %}
@@ -65,4 +76,24 @@
         {% endfor %}
         </tbody>
     </table>
+    {% for booking in bookings %}
+        {% if booking.doctor_comments %}
+            <div class="modal fade" id="viewModal{{ booking.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content text-start">
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold">Doctor Comments for {{ booking.patient.username }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-0" style="white-space: pre-wrap;">{{ booking.doctor_comments }}</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
 {% endblock %}
