@@ -323,11 +323,12 @@ def admin_delete_slot_view(request, slot_id):
 @user_passes_test(is_admin)
 def admin_user_list_view(request):
     search_query = request.GET.get('q', '')
+    base_users = User.objects.filter(is_superuser=False, is_staff=False)
     if search_query:
-        users_list = User.objects.filter(Q(username__icontains=search_query) | Q(email__icontains=search_query)
+        users_list = base_users.filter(Q(username__icontains=search_query) | Q(email__icontains=search_query)
                                          ).prefetch_related('groups').order_by('-date_joined')
     else:
-        users_list = User.objects.all().prefetch_related('groups').order_by('-date_joined')
+        users_list = base_users.prefetch_related('groups').order_by('-date_joined')
 
     paginator = Paginator(users_list, 10)
     page_number = request.GET.get('page')
